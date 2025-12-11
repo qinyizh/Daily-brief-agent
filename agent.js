@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { tavily } from "@tavily/core";
+import { Client } from "@notionhq/client";
 import dotenv from "dotenv";
 
 // 加载环境变量
@@ -9,6 +10,7 @@ dotenv.config();
 // 新版 SDK 会自动读取 process.env.GEMINI_API_KEY，也可以显式传入
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 // 2. 定义上下文和 Prompt
 const MY_CONTEXT = `
@@ -99,6 +101,39 @@ async function main() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(discordPayload)
+    });
+    // C. 写入 Notion (核心修改部分)
+    const today = new Date().toISOString().split('T')[0]; // 获取 YYYY-MM-DD
+
+    await notion.pages.create({
+      parent: { database_id: process.env.NOTION_DATABASE_ID }, // 指定数据库
+      properties: {
+        // 这里的 key (如 'Date', 'Summary') 必须和你 Notion 表头的名字一模一样！
+        "Date": {
+          title: [
+            { text: { content: `${today} 金融简报` } }
+          ]
+        },
+        "Status": {
+          select: { name: "待办" } // 自动标记为待办
+        },
+        "Summary": {
+          rich_text: [
+            { text: { content: report.top_news_summary.substring(0, 2000) } } // 截断以防超长
+          ]
+        },
+        "TikTok Title": {
+          rich_text: [
+             // 这里把 标题 和 Hook 拼在一起放进去
+            { text: { content: `【标题】${report.tiktok_strategy.title}\n【Hook】${report.tiktok_strategy.hook}` } }
+          ]
+        },
+        "App Action": {
+          rich_text: [
+            { text: { content: report.app_feature_opportunity.action } }
+          ]
+        }
+      }
     });
 
 
