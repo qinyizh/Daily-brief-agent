@@ -67,7 +67,7 @@ async function main() {
       contents: [{ role: "user", parts: [{ text: `分析以下最新 AI 资讯：\n${contextData}` }] }]
     });
 
-    const report = JSON.parse(response.text());
+    const report = JSON.parse(response.text);
 
     // C. 写入 Notion (建议在 Notion 里新建一个独立的 Database，并把 ID 存入 .env)
     const today = new Date().toISOString().split('T')[0];
